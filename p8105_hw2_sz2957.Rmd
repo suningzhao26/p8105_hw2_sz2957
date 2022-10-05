@@ -85,69 +85,80 @@ trans_ent %>%
 
 ### Problem 2
 
-Read and Clean the Mr.Trash Wheel sheet:
+###### Read and clean the data in the Mr.Trash Wheel sheet:
+
+Below is the process to read and clean the data in the first sheet of 'Trash Wheel Collection Data.xlsx`, which is Mr.Trash Wheel:
+
+* The process begins with data import and updating variable names. Within the `read_excel` function, I choose the range within A2:N549, to omit non-data entries.
+* Then, I Use `drop_na` function to omit rows that do not include dumpster-specific data.
+* In the next step, I round the number of sports balls to the nearest integer and converts the result to an integer variable using `as.integer`.Also, I convert `year` to numeric variable. In addition, I create a new variable `Trash_wheel` and define them as "Mr.Trash wheel". These is for merging purpose.
+
 ```{r}
-# Load the data file, without the picture in the first row and numerical sums in the last row(that do not include dumpster-specific data)
+
 Mr_Trash_wheel = 
   read_excel("./data/Trash Wheel Collection Data.xlsx",sheet = 1, range = "A2:N549") %>% 
-# clean names
   janitor::clean_names() %>% 
-# round the number of sports balls to the nearest integer and converts the result to an interger variable; Add a new variable indicate this is from Mr. Trash wheel: Convert year into num variable
+  drop_na(dumpster) %>% 
   mutate(
-      sports_balls_inte = as.integer(sports_balls),
+      sports_balls = as.integer(sports_balls),
       Trash_wheel = "Mr. Trash wheel",
       year = as.numeric(year)
     )
-# Demonstrate the table
   Mr_Trash_wheel 
 ```
 
-Read and clean the Professor Trash Wheel sheet:
+###### Read and clean the data in the Professor Wheel sheet:
+
+Below is the process to read and clean the data in the second sheet of 'Trash Wheel Collection Data.xlsx`, which is Professor Wheel:
+
+* The process begins with data import and updating variable names. Within the `read_excel` function, I choose the range within A2:M96, to omit non-data entries.
+* Then, I Use `drop_na` function to omit rows that do not include dumpster-specific data.
+* In the next step, I create a new variable `Trash_wheel` and define them as "Professor Trash wheel". These is for merging purpose.
+
 ```{r}
-# Load the data file, without the picture in the first row and numerical sums in the last row(that do not include dumpster-specific data)
 Pro_Trash_wheel = 
   read_excel("./data/Trash Wheel Collection Data.xlsx",sheet = 2, range = "A2:M96") %>% 
-# clean names
   janitor::clean_names() %>% 
-# round the number of sports balls to the nearest integer and converts the result to an interger variable; Add a new variable indicate this is from Mr. Trash wheel
+  drop_na(dumpster) %>% 
   mutate(
       Trash_wheel = "Professor Trash wheel"
     )
-# Demonstrate the table
   Pro_Trash_wheel
 ```
 
-Combine two trash wheel sheet. Since there is a huge difference between two dataset, we will choose full join method.
+###### Merge three datasets use `full_join()`
+
+Combine two trash wheel sheet. Since there is a huge difference between two dataset, we will choose full join method. After merging, I use `select()` to make the `dumpster` and `Trash_wheel` variables as top two columns.
 
 ```{r}
-# Join two dataset use full join
 Trash_wheel =
   full_join(Mr_Trash_wheel, Pro_Trash_wheel) %>% 
-# Change the order of variables
   select(dumpster, Trash_wheel, everything())
-# Demonstrate the table
   Trash_wheel
 ```
 
-Calculate some important data and results:
+###### Calculate some important data and results:
 ```{r}
-# calculate the number of observations in the resulting dataset
 Trash_wheel %>% 
   select(dumpster, Trash_wheel) %>% 
   distinct
-# Describe the key variables
+
   summary(Trash_wheel)
-# Total weight of trash collected by Professor Trash Wheel
-Trash_wheel %>% 
-  filter(Trash_wheel == "Professor Trash wheel") %>% 
-  pull(weight_tons) %>% 
-  mean()
-# Total number of sports balls collected by Mr.Trash Wheel in 2020
-Trash_wheel %>% 
-  filter(Trash_wheel == "Mr. Trash wheel", year == 2020) %>% 
-  pull(sports_balls_inte) %>% 
+  
+Total_weight_pf = 
+  filter(Trash_wheel, Trash_wheel == "Professor Trash wheel") %>%
+  pull(weight_tons)%>%
+  sum()
+
+Total_sports_balls_Mr =
+  filter(Trash_wheel, Trash_wheel == "Mr. Trash wheel", year == 2020) %>% 
+  pull(sports_balls) %>% 
   sum()
 ```
+* In the final merged dataset `Trash_wheel`, there are `r nrow(Trash_wheel)` observations and `r ncol(Trash_wheel)` variables. 
+* The key variables' names are `r names(Trash_wheel)`
+* The total weight of trash collected by Professor Trash Wheel is `r Total_weight_pf`
+* The total number of sports balls collected by Mr. Trash Wheel is `r Total_sports_balls_Mr`
 
 ### Problem 3
 
