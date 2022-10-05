@@ -14,6 +14,7 @@ knitr::opts_chunk$set(collapse = TRUE, message = FALSE)
 ```{r load_libraries}
 library(tidyverse)
 library(readxl)
+library(lubridate)
 ```
 
 
@@ -148,7 +149,100 @@ Trash_wheel %>%
   sum()
 ```
 
-
-
 ### Problem 3
+Read and clean the data in pols-month.csv:
+```{r}
+pols_month = 
+# read the pols-month.csv
+  read_csv("./data/fivethirtyeight_datasets/pols-month.csv")%>% 
+# clean the name of variables
+  janitor::clean_names() %>% 
+# separate to break up the variable mon into integer variables
+  separate(col = mon, into = c('year','month','day'), sep = "-" , convert = TRUE) %>% 
+  mutate(
+    # replace month number with month name;
+     month = month.abb[month],
+    # Create a president variable taking values gop and dem
+     president = recode(prez_dem, '0' = "gop", '1' = "dem")
+  ) %>% 
+# remove prez_dem, prez_gop and day
+  select(year, month, president, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem)
+# demonstrate the table
+pols_month
+```
 
+Read and clean the data in snp.csv:
+```{r}
+snp= 
+# read the snp.csv
+  read_csv("./data/fivethirtyeight_datasets/snp.csv")%>% 
+# clean the name of variables
+  janitor::clean_names() %>% 
+# rephrase date formate
+  mutate(
+     date_new = dmy(date)
+  ) %>%
+# separate to break up the variable mon into integer variables
+  separate(col = date_new, into = c('year','month','day'), sep = "-" , convert = TRUE) %>% 
+  mutate(
+    # replace month number with month name;
+     month = month.abb[month]
+  ) %>%   
+# remove prez_dem, prez_gop and day
+  select(year, month, close) %>% 
+# arrange according to year and month
+  arrange(year, month)
+# demonstrate the table
+snp
+```
+
+Read and clean the data in unemployment.csv:
+```{r}
+unemployment= 
+# read the unemployment.csv
+  read_csv("./data/fivethirtyeight_datasets/unemployment.csv")%>% 
+# clean the name of variables
+  janitor::clean_names() %>% 
+# Change the dataset from wide to long
+  pivot_longer(
+    jan:dec,
+    names_to = "month",
+    values_to = "unemployment_rate"
+  ) %>% 
+  mutate(
+    # replace month number with month name;
+     month = str_to_title(month)
+  ) 
+    # demonstrate the table
+unemployment
+```
+
+Merge the datasets:
+```{r}
+# Join two dataset use left join
+Five_Thirty_Eight =
+  left_join(pols_month, snp, by = c("year","month")) %>% 
+# Join the third dataset use left join
+  left_join(unemployment, by = c("year","month"))
+# Demonstrate the table
+  Five_Thirty_Eight
+```
+
+Calculate some important data and results:
+```{r}
+# Describe pols_month
+head(pols_month)
+summary(pols_month)
+
+# Describe snp
+head(snp)
+summary(snp)
+
+# Describe unemployment
+head(unemployment)
+summary(unemployment)
+
+# Describe Five_Thirty_Eight
+head(Five_Thirty_Eight)
+summary(Five_Thirty_Eight)
+```
