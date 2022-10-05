@@ -150,85 +150,87 @@ Trash_wheel %>%
 ```
 
 ### Problem 3
-Read and clean the data in pols-month.csv:
+
+###### Read and clean the data in pols-month.csv
+
+Below is the process to read and clean the data in `pols-month.csv`:
+
+* The process begins with data import and updating variable names.
+* Then, I Use `separate()` to break up the variable `mon` into integer variables `year`,`month`, and `day`.
+* In the next `mutate()` step, I use `month.abb` to replace month number with abbreviated month name and create a `president` variable taking values `gop` and `dem` using `recode()`.
+* In `select()` step, I remove `prez_dem` and `prez_gop` and `day` variable and choose other variables.
+
 ```{r}
 pols_month = 
-# read the pols-month.csv
-  read_csv("./data/fivethirtyeight_datasets/pols-month.csv")%>% 
-# clean the name of variables
+  read_csv("./data/fivethirtyeight_datasets/pols-month.csv")%>%
   janitor::clean_names() %>% 
-# separate to break up the variable mon into integer variables
   separate(col = mon, into = c('year','month','day'), sep = "-" , convert = TRUE) %>% 
   mutate(
-    # replace month number with month name;
      month = month.abb[month],
-    # Create a president variable taking values gop and dem
      president = recode(prez_dem, '0' = "gop", '1' = "dem")
   ) %>% 
-# remove prez_dem, prez_gop and day
   select(year, month, president, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem)
-# demonstrate the table
 pols_month
 ```
 
-Read and clean the data in snp.csv:
+###### Read and clean the data in snp.csv
+
+Below is the process to read and clean the data in `snp.csv`:
+
+* The process begins with data import and updating variable names.
+* Then, I Use `parse_date_time2()` in `lubridate()` to convert the date format to yyyy-mm-dd. This step is used for a uniform format of `month` variable for future merge.
+* After converting the date format, I use `separate()` to break up the variable `mon` into integer variables `year`,`month`, and `day`.
+* In the next `mutate()` step, I use `month.abb` to replace month number with abbreviated month name.
+* In `select()` step, I only keep `year` and `month` and `close` variables, with `year` and `month` as leading columns and use `arrange()` step to arrange the order according to year and month.
 ```{r}
 snp= 
-# read the snp.csv
   read_csv("./data/fivethirtyeight_datasets/snp.csv")%>% 
-# clean the name of variables
   janitor::clean_names() %>% 
-# rephrase date formate
   mutate(
-     date_new = dmy(date)
+     date_new = parse_date_time2(date, orders="mdy", cutoff_2000 = 23)
   ) %>%
-# separate to break up the variable mon into integer variables
   separate(col = date_new, into = c('year','month','day'), sep = "-" , convert = TRUE) %>% 
   mutate(
-    # replace month number with month name;
      month = month.abb[month]
   ) %>%   
-# remove prez_dem, prez_gop and day
   select(year, month, close) %>% 
-# arrange according to year and month
   arrange(year, month)
-# demonstrate the table
 snp
 ```
 
-Read and clean the data in unemployment.csv:
+###### Read and clean the data in unemployment.csv
+
+Below is the process to read and clean the data in `unemployment.csv`:
+
+* The process begins with data import and updating variable names.
+* Then, I Use `pivot_longer()` to switch the table from "wide" to "long" format, Making the original columns as `month`, and the values to `unemployment_rate`.
+* After switching the table, I use `str_to_title()` to make the words in `month` as "Jan". This is to make sure we can combine three datasets.
+
 ```{r}
 unemployment= 
-# read the unemployment.csv
   read_csv("./data/fivethirtyeight_datasets/unemployment.csv")%>% 
-# clean the name of variables
   janitor::clean_names() %>% 
-# Change the dataset from wide to long
   pivot_longer(
     jan:dec,
     names_to = "month",
     values_to = "unemployment_rate"
   ) %>% 
   mutate(
-    # replace month number with month name;
      month = str_to_title(month)
   ) 
-    # demonstrate the table
 unemployment
 ```
 
-Merge the datasets:
+###### Merge three datasets use `left_join()`
+
 ```{r}
-# Join two dataset use left join
 Five_Thirty_Eight =
   left_join(pols_month, snp, by = c("year","month")) %>% 
-# Join the third dataset use left join
   left_join(unemployment, by = c("year","month"))
-# Demonstrate the table
   Five_Thirty_Eight
 ```
 
-Calculate some important data and results:
+###### Calculate some important data and results:
 ```{r}
 # Describe pols_month
 head(pols_month)
@@ -246,3 +248,11 @@ summary(unemployment)
 head(Five_Thirty_Eight)
 summary(Five_Thirty_Eight)
 ```
+
+* The dataset `pols_month` contains `r nrow(pols_month)` observations and `r ncol(pols_month)` with the names `r names(pols_month)`. The year ranges from `r pols_month %>% pull(year) %>% range()`.
+
+* The dataset `snp` contains `r nrow(snp)` observations and `r ncol(snp)` with the names `r names(snp)`. The year ranges from `r snp %>% pull(year) %>% range()`.
+
+* The dataset `unemployment` contains `r nrow(unemployment)` observations and `r ncol(unemployment)` with the names `r names(unemployment)`. The year ranges from `r unemployment %>% pull(year) %>% range()`.
+
+* The merged dataset `Five_Thirty_Eight`, which is a merged dataset of three datasets above, contains `r nrow(Five_Thirty_Eight)` observations and `r ncol(Five_Thirty_Eight)` with the names `r names(Five_Thirty_Eight)`. The year ranges from `r Five_Thirty_Eight %>% pull(year) %>% range()`.
