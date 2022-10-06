@@ -156,9 +156,9 @@ Total_sports_balls_Mr =
   sum()
 ```
 * In the final merged dataset `Trash_wheel`, there are `r nrow(Trash_wheel)` observations and `r ncol(Trash_wheel)` variables. 
-* The key variables' names are `r names(Trash_wheel)`
-* The total weight of trash collected by Professor Trash Wheel is `r Total_weight_pf`
-* The total number of sports balls collected by Mr. Trash Wheel is `r Total_sports_balls_Mr`
+* The key variables' names are `r names(Trash_wheel)`.
+* The total weight of trash collected by Professor Trash Wheel is `r Total_weight_pf` tons.
+* The total number of sports balls collected by Mr. Trash Wheel is `r Total_sports_balls_Mr` in 2020.
 
 ### Problem 3
 
@@ -168,7 +168,7 @@ Below is the process to read and clean the data in `pols-month.csv`:
 
 * The process begins with data import and updating variable names.
 * Then, I Use `separate()` to break up the variable `mon` into integer variables `year`,`month`, and `day`.
-* In the next `mutate()` step, I use `month.abb` to replace month number with abbreviated month name and create a `president` variable taking values `gop` and `dem` using `recode()`.
+* In the next `mutate()` step, I use `month.abb` to replace month number with abbreviated month name and create a `president` variable taking values `gop` and `dem`.
 * In `select()` step, I remove `prez_dem` and `prez_gop` and `day` variable and choose other variables.
 
 ```{r}
@@ -177,8 +177,8 @@ pols_month =
   janitor::clean_names() %>% 
   separate(col = mon, into = c('year','month','day'), sep = "-" , convert = TRUE) %>% 
   mutate(
-     month = month.abb[month],
-     president = recode(prez_dem, '0' = "gop", '1' = "dem")
+    month = month.abb[month],
+    president = case_when(prez_dem == "1" ~ "dem", prez_gop     == "1" ~ "gop")
   ) %>% 
   select(year, month, president, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem)
 pols_month
